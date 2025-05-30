@@ -1,0 +1,4 @@
+{
+    "command": "PORT=<port> BROWSER=none npm start",
+    "working_directory": "/home/kavia/workspace/code-generation/studyquest-ai-26884-f90d8f76/studyquest_ai"
+}
