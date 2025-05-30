@@ -89,7 +89,7 @@ function MainContainer() {
   }
 
   // PUBLIC_INTERFACE
-  // Generate MCQs from extracted text using API (mock or real endpoint)
+  // Generate MCQs from extracted text using API (real endpoint only, no fallback)
   async function generateMCQsFromText(text) {
     /* This function sends text to a backend/API for MCQ generation.
      * Update with your real API endpoint as needed.
@@ -99,53 +99,34 @@ function MainContainer() {
     const API_URL = "/api/generate_mcq";
 
     try {
-      // Uncomment below for real API usage and adapt as necessary for your backend's return format.
-      // const response = await fetch(API_URL, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ text })
-      // });
-      // if (!response.ok) throw new Error("MCQ generation failed!");
-      // const data = await response.json();
-      // // Defensive: Normalize/transform response if API return structure is different or inconsistent
-      // if (Array.isArray(data.questions)) {
-      //   // Common backend response { questions: [...] }
-      //   return data.questions.map(q => ({
-      //     question: q.question || q.text || "",
-      //     options: q.options || q.choices || [],
-      //     correct: typeof q.correct === "number" ? q.correct : (Array.isArray(q.answers) ? q.answers[0] : 0),
-      //     explanation: q.explanation || ""
-      //   }));
-      // } else if (Array.isArray(data)) {
-      //   // Raw array response
-      //   return data.map(q => ({
-      //     question: q.question || q.text || "",
-      //     options: q.options || q.choices || [],
-      //     correct: typeof q.correct === "number" ? q.correct : (Array.isArray(q.answers) ? q.answers[0] : 0),
-      //     explanation: q.explanation || ""
-      //   }));
-      // }
-      // throw new Error("No questions generated or invalid response from MCQ API.");
-
-      // -- MOCK fallback (matches expected schema for quiz rendering) --
-      return await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve([
-            {
-              question: "What is one major cause of World War II?",
-              options: ["Discovery of America", "Versailles Treaty", "Space Race", "Internet Revolution"],
-              correct: 1, // correct index in options
-              explanation: "The Treaty of Versailles imposed harsh reparations on Germany, contributing to the rise of WWII."
-            },
-            {
-              question: "What is the primary process in the water cycle?",
-              options: ["Evaporation", "Photosynthesis", "Gravity", "Eruption"],
-              correct: 0,
-              explanation: "Evaporation turns water into vapor, beginning the water cycle."
-            }
-          ]);
-        }, 1300);
+      // Real API usage only -- no fallback/mock. If not connected, will show API error.
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
       });
+      if (!response.ok) throw new Error("MCQ generation failed!");
+      const data = await response.json();
+
+      // Defensive: Normalize/transform response if API return structure is different or inconsistent
+      if (Array.isArray(data.questions)) {
+        // Common backend response { questions: [...] }
+        return data.questions.map(q => ({
+          question: q.question || q.text || "",
+          options: q.options || q.choices || [],
+          correct: typeof q.correct === "number" ? q.correct : (Array.isArray(q.answers) ? q.answers[0] : 0),
+          explanation: q.explanation || ""
+        }));
+      } else if (Array.isArray(data)) {
+        // Raw array response
+        return data.map(q => ({
+          question: q.question || q.text || "",
+          options: q.options || q.choices || [],
+          correct: typeof q.correct === "number" ? q.correct : (Array.isArray(q.answers) ? q.answers[0] : 0),
+          explanation: q.explanation || ""
+        }));
+      }
+      throw new Error("No questions generated or invalid response from MCQ API.");
     } catch (e) {
       throw typeof e === "string" ? e : (e.message || "Failed to generate questions.");
     }
