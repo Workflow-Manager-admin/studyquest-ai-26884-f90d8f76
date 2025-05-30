@@ -91,12 +91,18 @@ function MainContainer() {
   // PUBLIC_INTERFACE
   // Generate MCQs from extracted text using API (real endpoint only, no fallback)
   async function generateMCQsFromText(text) {
-    /* This function sends text to a backend/API for MCQ generation.
-     * Update with your real API endpoint as needed.
+    /*
+     * This function sends the extracted text to the backend MCQ generation API endpoint.
+     * The endpoint URL is determined by the REACT_APP_MCQ_API_URL environment variable if set,
+     * otherwise falls back to the default "/api/generate_mcq" for dev usage.
+     * Make sure to set the REACT_APP_MCQ_API_URL in .env files for deployment.
      * Returns array of MCQ objects, where each object contains:
      *   { question: string, options: array of string, correct: integer, explanation: string }
      */
-    const API_URL = "/api/generate_mcq";
+
+    // Use environment variable if set, fallback to previous path if not.
+    const API_URL =
+      process.env.REACT_APP_MCQ_API_URL || "/api/generate_mcq";
 
     try {
       let response;
@@ -133,9 +139,8 @@ function MainContainer() {
         throw new Error("Failed to read MCQ API response (not in expected format).");
       }
 
-      // Defensive: Normalize/transform response if API return structure is different or inconsistent
+      // Normalize response structure (support both {questions: [...]} and array format).
       if (Array.isArray(data.questions)) {
-        // Common backend response { questions: [...] }
         if (!data.questions.length) {
           throw new Error("No MCQs were generated. Please try with a different file or contact support.");
         }
@@ -146,7 +151,6 @@ function MainContainer() {
           explanation: q.explanation || ""
         }));
       } else if (Array.isArray(data)) {
-        // Raw array response
         if (!data.length) {
           throw new Error("No MCQs were generated. Please try with a different file or contact support.");
         }
