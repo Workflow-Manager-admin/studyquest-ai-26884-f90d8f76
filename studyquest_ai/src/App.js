@@ -99,18 +99,46 @@ function MainContainer() {
     const API_URL = "/api/generate_mcq";
 
     try {
-      // Real API usage only -- no fallback/mock. If not connected, will show API error.
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
-      if (!response.ok) throw new Error("MCQ generation failed!");
-      const data = await response.json();
+      let response;
+      try {
+        response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+      } catch (networkErr) {
+        // Network errors (API down, connectivity, CORS, no backend)
+        throw new Error(
+          "Unable to connect to MCQ generation API. Please check your network connection or try again later."
+        );
+      }
+      // Non-2xx HTTP error (backend provided error details?)
+      if (!response.ok) {
+        let apiErrMsg = "MCQ generation failed!";
+        try {
+          const errorJson = await response.json();
+          if (errorJson.error || errorJson.message) {
+            apiErrMsg += " - " + (errorJson.error || errorJson.message);
+          }
+        } catch (e) {
+          // Response not JSON, leave message generic
+        }
+        throw new Error(apiErrMsg + ` (HTTP ${response.status})`);
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseErr) {
+        throw new Error("Failed to read MCQ API response (not in expected format).");
+      }
 
       // Defensive: Normalize/transform response if API return structure is different or inconsistent
       if (Array.isArray(data.questions)) {
         // Common backend response { questions: [...] }
+        if (!data.questions.length) {
+          throw new Error("No MCQs were generated. Please try with a different file or contact support.");
+        }
         return data.questions.map(q => ({
           question: q.question || q.text || "",
           options: q.options || q.choices || [],
@@ -119,6 +147,9 @@ function MainContainer() {
         }));
       } else if (Array.isArray(data)) {
         // Raw array response
+        if (!data.length) {
+          throw new Error("No MCQs were generated. Please try with a different file or contact support.");
+        }
         return data.map(q => ({
           question: q.question || q.text || "",
           options: q.options || q.choices || [],
@@ -126,9 +157,10 @@ function MainContainer() {
           explanation: q.explanation || ""
         }));
       }
-      throw new Error("No questions generated or invalid response from MCQ API.");
+      throw new Error("No questions generated or invalid response from MCQ API. Please try again, and if the problem persists, contact support.");
     } catch (e) {
-      throw typeof e === "string" ? e : (e.message || "Failed to generate questions.");
+      // Standardize error format for API/UI
+      throw typeof e === "string" ? e : (e.message || "Failed to generate questions. Please try again.");
     }
   }
 
@@ -252,7 +284,25 @@ function MainContainer() {
         {isProcessing ? "Processing..." : "Generate MCQs"}
       </button>
       {uploadError && <div style={{ color: "#FF4040", marginTop: 12 }}>{uploadError}</div>}
-      {apiError && <div style={{ color: "#FF4040", marginTop: 12 }}>{apiError}</div>}
+      {apiError && (
+        <div style={{
+          color: "#FF4040",
+          marginTop: 12,
+          background: "#260606",
+          borderRadius: 8,
+          padding: "10px 16px",
+          fontWeight: 500,
+          border: "1px solid #D7263D"
+        }}>
+          <span style={{fontWeight: 700, marginRight: 6}}>MCQ Generation Error:</span>
+          {apiError}
+          <div style={{color: "#ccc", fontSize: "0.96em", marginTop: "6px"}}>
+            • Please check file content and format.<br/>
+            • Try re-uploading your document or refreshing the page.<br/>
+            • If the issue persists, contact support or try again later.
+          </div>
+        </div>
+      )}
     </section>
   );
 
