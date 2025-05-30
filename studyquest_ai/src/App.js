@@ -53,45 +53,84 @@ function MainContainer() {
   }
 
   // PUBLIC_INTERFACE
-  // Simulate API call for extracting text from file (placeholder)
+  // Extract text from file using async API (mock or real endpoint)
   async function extractTextFromFile(file) {
-    // In a real app, this would send FormData to the backend.
-    // Here we simulate a response.
-    // For proof-of-concept: extract dummy text after simulating processing time.
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (file.type === "application/pdf")
-          resolve("This is sample extracted text from the uploaded PDF file about World War II.");
-        else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-          resolve("This is extracted content from the DOCX file about the water cycle.");
-        else
-          reject("Unsupported file type for extraction.");
-      }, 1200);
-    });
+    /* This function sends the uploaded file to a backend/API for text extraction.
+     * Update the endpoint variable to your actual backend API for text extraction as needed.
+     * Returns extracted text as string.
+     */
+    const API_URL = "/api/extract_text"; // Example: '/api/extract_text' or replace with external service
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      // Try real API first: comment out below and use next block for real server
+      // Real API call version:
+      // const response = await fetch(API_URL, { method: "POST", body: formData });
+      // if (!response.ok) throw new Error("Text extraction failed!");
+      // const data = await response.json();
+      // if (!data.text) throw new Error("No text extracted from document.");
+      // return data.text;
+
+      // -- MOCK fallback (no real endpoint) --
+      return await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (file.type === "application/pdf")
+            resolve("This is sample extracted text from the uploaded PDF file about World War II.");
+          else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            resolve("This is extracted content from the DOCX file about the water cycle.");
+          else
+            reject("Unsupported file type for extraction.");
+        }, 1200);
+      });
+    } catch (e) {
+      throw typeof e === "string" ? e : (e.message || "Failed to extract text.");
+    }
   }
 
   // PUBLIC_INTERFACE
-  // Simulate API call for generating MCQs from extracted text (placeholder)
+  // Generate MCQs from extracted text using API (mock or real endpoint)
   async function generateMCQsFromText(text) {
-    // Ideally, you'd call an AI/LLM API here. We'll hardcode a demo response.
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            question: "What is one major cause of World War II?",
-            options: ["Discovery of America", "Versailles Treaty", "Space Race", "Internet Revolution"],
-            correct: 1, // index
-            explanation: "The Treaty of Versailles imposed harsh reparations on Germany, contributing to the rise of WWII."
-          },
-          {
-            question: "What is the primary process in the water cycle?",
-            options: ["Evaporation", "Photosynthesis", "Gravity", "Eruption"],
-            correct: 0,
-            explanation: "Evaporation turns water into vapor, beginning the water cycle."
-          }
-        ]);
-      }, 1300);
-    });
+    /* This function sends text to a backend/API for MCQ generation.
+     * Update with your real API endpoint as needed.
+     * Returns array of MCQ objects.
+     */
+    const API_URL = "/api/generate_mcq"; // Example: '/api/generate_mcq'
+
+    try {
+      // Try real API first: uncomment and adapt if your endpoint exists
+      // const response = await fetch(API_URL, {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ text })
+      // });
+      // if (!response.ok) throw new Error("MCQ generation failed!");
+      // const data = await response.json();
+      // if (!data.questions) throw new Error("No questions generated.");
+      // return data.questions;
+
+      // -- MOCK fallback --
+      return await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve([
+            {
+              question: "What is one major cause of World War II?",
+              options: ["Discovery of America", "Versailles Treaty", "Space Race", "Internet Revolution"],
+              correct: 1, // index
+              explanation: "The Treaty of Versailles imposed harsh reparations on Germany, contributing to the rise of WWII."
+            },
+            {
+              question: "What is the primary process in the water cycle?",
+              options: ["Evaporation", "Photosynthesis", "Gravity", "Eruption"],
+              correct: 0,
+              explanation: "Evaporation turns water into vapor, beginning the water cycle."
+            }
+          ]);
+        }, 1300);
+      });
+    } catch (e) {
+      throw typeof e === "string" ? e : (e.message || "Failed to generate questions.");
+    }
   }
 
   // PUBLIC_INTERFACE
@@ -106,11 +145,11 @@ function MainContainer() {
     setQuizIndex(0);
     setUserAnswers([]);
     try {
-      // Step 1: Extract Text
+      // Step 1: Extract Text from backend API or mock
       const text = await extractTextFromFile(file);
       setExtractedText(text);
 
-      // Step 2: Generate MCQs via (simulated) API
+      // Step 2: Generate MCQs via API or mock
       const generatedMCQs = await generateMCQsFromText(text);
 
       setMcqs(generatedMCQs);
